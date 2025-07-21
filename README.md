@@ -18,7 +18,7 @@ other commitments. We are now looking for a new team member who can take over th
 the library, handling development, issue resolution, and feature enhancements. If you're a desktop
 developer ready to dive into open-source, we want you!
 
-**Contact:** zoumingjie17@163.com
+**Contact:** mhennemeyer@me.com
 
 
 > **Note**
