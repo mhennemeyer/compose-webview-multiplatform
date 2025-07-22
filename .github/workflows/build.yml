@@ -2,8 +2,7 @@ name: Build Multiplatform project
 on:
   push:
     branches:
-      - main
-      - feature/ci_setup
+      - release
   pull_request:
 
 jobs:
