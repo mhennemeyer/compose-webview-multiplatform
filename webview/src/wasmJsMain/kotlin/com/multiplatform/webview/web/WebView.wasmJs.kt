@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import com.multiplatform.webview.jsbridge.ConsoleBridge
 import com.multiplatform.webview.jsbridge.WebViewJsBridge
 import kotlinx.browser.document
 import kotlinx.coroutines.launch
@@ -153,6 +154,7 @@ actual fun ActualWebView(
     captureBackPresses: Boolean,
     navigator: WebViewNavigator,
     webViewJsBridge: WebViewJsBridge?,
+    consoleBridge: ConsoleBridge?,
     onCreated: (NativeWebView) -> Unit,
     onDispose: (NativeWebView) -> Unit,
     platformWebViewParams: PlatformWebViewParams?,
@@ -314,7 +316,7 @@ private fun setupJsBridgeForWasm(
             try {
                 val dataString = messageEvent.data.toString()
 
-                if (dataString.contains("kmpJsBridge") && dataString.startsWith("{")) {
+                if (dataString.contains(webViewJsBridge.jsBridgeName) && dataString.startsWith("{")) {
                     val actionPattern = """"action"\s*:\s*"([^"]*)"""".toRegex()
                     val paramsPattern = """"params"\s*:\s*"((?:[^"\\]|\\.)*)"""".toRegex()
                     val callbackPattern = """"callbackId"\s*:\s*(\d+)""".toRegex()

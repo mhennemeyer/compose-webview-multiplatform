@@ -11,20 +11,10 @@
 
 <img src="media/cmm-webview-sample.png" height="500">
 
-### 🚨 Seeking Desktop Maintainer 🚨
-
-Unfortunately, our current desktop platform maintainer, @DATL4G, cannot continue his role due to
-other commitments. We are now looking for a new team member who can take over the desktop side of
-the library, handling development, issue resolution, and feature enhancements. If you're a desktop
-developer ready to dive into open-source, we want you!
-
-**Contact:** mhennemeyer@me.com
-
 
 > **Note**
 > This library is built using
->
-the [compose multiplatform library template](https://github.com/KevinnZou/compose-multiplatform-library-template).
+> the [compose multiplatform library template](https://github.com/KevinnZou/compose-multiplatform-library-template).
 > It supports automatic package publishing, documentation, and code style checking.
 
 This library can be considered as the Multiplatform version
@@ -663,7 +653,7 @@ kotlin {
         commonMain {
             dependencies {
                 // use api since the desktop app need to access the Cef to initialize it.
-                api("io.github.kevinnzou:compose-webview-multiplatform:2.0.0")
+                api("io.github.kevinnzou:compose-webview-multiplatform:2.0.3")
             }
         }
     }

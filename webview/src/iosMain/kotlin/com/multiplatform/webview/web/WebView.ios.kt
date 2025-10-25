@@ -8,11 +8,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
+import com.multiplatform.webview.jsbridge.ConsoleBridge
 import com.multiplatform.webview.jsbridge.WebViewJsBridge
 import com.multiplatform.webview.util.toUIColor
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.cValue
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSOperatingSystemVersion
+import platform.Foundation.NSProcessInfo
 import platform.Foundation.setValue
 import platform.WebKit.WKAudiovisualMediaTypeAll
 import platform.WebKit.WKAudiovisualMediaTypeNone
@@ -30,6 +34,7 @@ actual fun ActualWebView(
     captureBackPresses: Boolean,
     navigator: WebViewNavigator,
     webViewJsBridge: WebViewJsBridge?,
+    consoleBridge: ConsoleBridge?,
     onCreated: (NativeWebView) -> Unit,
     onDispose: (NativeWebView) -> Unit,
     platformWebViewParams: PlatformWebViewParams?,
@@ -146,10 +151,27 @@ fun IOSWebView(
                             scrollEnabled = it.scrollEnabled
                             showsHorizontalScrollIndicator = it.showHorizontalScrollIndicator
                             showsVerticalScrollIndicator = it.showVerticalScrollIndicator
+                            contentInsetAdjustmentBehavior =
+                                platform.UIKit.UIScrollViewContentInsetAdjustmentBehavior.UIScrollViewContentInsetAdjustmentNever
                         }
                     }
 
-                    this.setInspectable(state.webSettings.iOSWebSettings.isInspectable)
+                    /**
+                     * Sets the inspectable property of the WKWebView.
+                     * This is only done if the operating system version is iOS 16.4 or later
+                     * to prevent crashes on lower versions where the `setInspectable` method is not available.
+                     * Enabling this allows Safari Web Inspector to debug the content of the WebView.
+                     * The value is determined by `state.webSettings.iOSWebSettings.isInspectable`.
+                     */
+                    val minSetInspectableVersion =
+                        cValue<NSOperatingSystemVersion> {
+                            majorVersion = 16
+                            minorVersion = 4
+                            patchVersion = 0
+                        }
+                    if (NSProcessInfo.processInfo.isOperatingSystemAtLeastVersion(minSetInspectableVersion)) {
+                        this.setInspectable(state.webSettings.iOSWebSettings.isInspectable)
+                    }
                 }.also {
                     val iosWebView = IOSWebView(it, scope, webViewJsBridge)
                     state.webView = iosWebView
@@ -167,7 +189,12 @@ fun IOSWebView(
         },
         properties =
             UIKitInteropProperties(
-                interactionMode = UIKitInteropInteractionMode.NonCooperative,
+                interactionMode =
+                    if (state.webSettings.iOSWebSettings.scrollEnabled) {
+                        UIKitInteropInteractionMode.NonCooperative
+                    } else {
+                        UIKitInteropInteractionMode.Cooperative()
+                    },
                 isNativeAccessibilityEnabled = true,
             ),
     )
