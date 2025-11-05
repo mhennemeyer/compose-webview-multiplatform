@@ -1,0 +1,6 @@
+language = Objective-C
+headers = ../../iosMain/objc/KeychainShim.h
+sources = ../../iosMain/objc/KeychainShim.m
+compilerOpts = -fobjc-arc -x objective-c -std=gnu11
+linkerOpts = -framework Security -framework LocalAuthentication -framework Foundation
+package = keychainshim

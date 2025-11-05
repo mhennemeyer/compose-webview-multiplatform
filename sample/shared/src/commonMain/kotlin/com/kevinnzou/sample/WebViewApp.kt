@@ -63,6 +63,9 @@ internal fun WebViewApp() {
         composable("error") {
             ErrorResponseSample(controller)
         }
+        composable("biometrics") {
+            BiometricsSample(controller)
+        }
     }
 }
 
@@ -124,6 +127,12 @@ fun MainScreen(controller: NavController) {
                 controller.navigate("error")
             }) {
                 Text("Error Response Sample", fontSize = 18.sp)
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = {
+                controller.navigate("biometrics")
+            }) {
+                Text("Biometrics Sample", fontSize = 18.sp)
             }
         }
     }

@@ -24,3 +24,4 @@ sample/desktopApp/*.log
 site
 /.kotlin
 /docs/android-kotlin-package-list
+.junie/

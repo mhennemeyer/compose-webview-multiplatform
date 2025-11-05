@@ -45,6 +45,8 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
+ </array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID is used to authenticate you for accessing the demo secret.</string>
 </dict>
 </plist>

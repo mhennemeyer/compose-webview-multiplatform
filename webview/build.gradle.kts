@@ -71,6 +71,8 @@ kotlin {
             api(libs.android.activity.compose)
             api(libs.android.webkit)
             implementation(libs.kotlin.coroutines.android)
+            implementation(libs.android.biometric)
+            implementation(libs.android.fragment)
         }
 
         iosMain.dependencies { }
@@ -111,6 +113,11 @@ fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.setUpiOSObserver()
     compilations.getByName("main") {
         cinterops.create("observer") {
             compilerOpts("-F $path")
+        }
+        cinterops.create("keychain_shim") {
+            // ObjC shim for Security.framework keychain calls
+            includeDirs("src/iosMain/objc")
+            compilerOpts("-std=gnu11")
         }
     }
 }

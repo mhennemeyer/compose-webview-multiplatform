@@ -94,7 +94,7 @@ android {
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
 
     defaultConfig {
-        minSdk = 21
+        minSdk = (findProperty("android.minSdk") as String).toInt()
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
