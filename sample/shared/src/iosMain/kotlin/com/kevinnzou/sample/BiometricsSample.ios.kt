@@ -64,8 +64,9 @@ actual fun BiometricsPlatformContent() {
 
         Button(onClick = {
             scope.launch {
-                val ok = store.delete("demo-token")
-                statusText.value = if (ok) "Deleted secret" else "Delete failed"
+                // Reset status to initial state after delete, regardless of outcome
+                store.delete("demo-token")
+                statusText.value = "Ready"
             }
         }) { Text("Delete secret") }
     }

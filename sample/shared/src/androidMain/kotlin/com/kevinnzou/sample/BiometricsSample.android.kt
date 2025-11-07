@@ -55,16 +55,24 @@ actual fun BiometricsPlatformContent() {
 
     if (activity == null) {
         // Use a dedicated AppCompatActivity host for biometrics while keeping MainActivity as ComponentActivity
+        val lastAction = remember { mutableStateOf<String?>(null) }
         val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             val data = result.data
             val success = data?.getBooleanExtra(EXTRA_SUCCESS, false) ?: false
             val message = data?.getStringExtra(EXTRA_MESSAGE)
             val bytes = data?.getByteArrayExtra(EXTRA_BYTES)
-            statusText.value = when {
-                bytes != null -> "Read: ${bytes.decodeToString()}"
-                message != null -> message
-                else -> if (success) "Success" else "Failed"
+            val action = lastAction.value
+            // Reset status to initial state after delete, regardless of outcome
+            if (action == ACTION_DELETE) {
+                statusText.value = "Ready"
+            } else {
+                statusText.value = when {
+                    bytes != null -> "Read: ${bytes.decodeToString()}"
+                    message != null -> message
+                    else -> if (success) "Success" else "Failed"
+                }
             }
+            lastAction.value = null
         }
 
         // Debounce clicks to avoid dropped/rapid taps; add immediate feedback
@@ -77,6 +85,8 @@ actual fun BiometricsPlatformContent() {
             }
             lastClickMs.value = now
             Toast.makeText(context, "Click: $action", Toast.LENGTH_SHORT).show()
+            // Remember last action so we can reset status on delete
+            lastAction.value = action
 
             val intent = Intent().apply {
                 setClassName(context, "com.multiplatform.webview.BiometricHostActivity")
@@ -164,8 +174,9 @@ actual fun BiometricsPlatformContent() {
         Button(onClick = {
             if (!preClick("delete")) return@Button
             scope.launch {
-                val ok = store.delete("demo-token")
-                statusText.value = if (ok) "Deleted secret" else "Delete failed"
+                // Reset status to initial state after delete, regardless of outcome
+                store.delete("demo-token")
+                statusText.value = "Ready"
             }
         }) { Text("Delete secret") }
     }
