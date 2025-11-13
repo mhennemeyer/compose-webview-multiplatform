@@ -34,6 +34,55 @@ class WKNavigationDelegate(
     WKNavigationDelegateProtocol {
     private var isRedirect = false
 
+    // HTTP Auth (Basic/Digest) handling forwarded to interceptor if provided
+    @ObjCSignatureOverride
+    override fun webView(
+        webView: WKWebView,
+        didReceiveAuthenticationChallenge: platform.Foundation.NSURLAuthenticationChallenge,
+        completionHandler: (platform.Foundation.NSURLSessionAuthChallengeDisposition, platform.Foundation.NSURLCredential?) -> Unit,
+    ) {
+        val interceptor = navigator.basicAuthInterceptor
+        val protectionSpace = didReceiveAuthenticationChallenge.protectionSpace
+        val method = protectionSpace.authenticationMethod
+        val isSupported = method == platform.Foundation.NSURLAuthenticationMethodHTTPBasic || method == platform.Foundation.NSURLAuthenticationMethodHTTPDigest
+        if (interceptor == null || !isSupported) {
+            completionHandler(platform.Foundation.NSURLSessionAuthChallengePerformDefaultHandling, null)
+            return
+        }
+        val host = protectionSpace.host
+        val realm = protectionSpace.realm
+        val challenge = com.multiplatform.webview.response.BasicAuthChallenge(
+            host = host,
+            realm = realm,
+            isProxy = protectionSpace.isProxy()
+        )
+        val handled = try {
+            interceptor.onHttpAuthRequest(
+                challenge,
+                object : com.multiplatform.webview.response.BasicAuthHandler {
+                    private var used = false
+                    override fun proceed(username: String, password: String) {
+                        if (used) return; used = true
+                        val cred = platform.Foundation.NSURLCredential.credentialWithUser(
+                            user = username,
+                            password = password,
+                            persistence = platform.Foundation.NSURLCredentialPersistenceForSession,
+                        )
+                        completionHandler(platform.Foundation.NSURLSessionAuthChallengeUseCredential, cred)
+                    }
+                    override fun cancel() {
+                        if (used) return; used = true
+                        completionHandler(platform.Foundation.NSURLSessionAuthChallengeCancelAuthenticationChallenge, null)
+                    }
+                },
+                navigator,
+            )
+        } catch (_: Throwable) { false }
+        if (!handled) {
+            completionHandler(platform.Foundation.NSURLSessionAuthChallengePerformDefaultHandling, null)
+        }
+    }
+
     /**
      * Called when the web view begins to receive web content.
      */
@@ -118,9 +167,10 @@ class WKNavigationDelegate(
         KLogger.e {
             "didFailNavigation"
         }
+
         if (navigator.errorResponseInterceptor?.let { errorResponseInterceptor ->
                 errorResponseInterceptor.onInterceptErrorResponse(
-                    ErrorResponse(withError.description, withError.code),
+                    ErrorResponse(withError.description, withError.code, webView.URL.toString()),
                     navigator
                 )
             } ?: false) {

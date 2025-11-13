@@ -288,6 +288,40 @@ open class AccompanistWebViewClient : WebViewClient() {
         internal set
     private var isRedirect = false
 
+    override fun onReceivedHttpAuthRequest(
+        view: WebView?,
+        handler: android.webkit.HttpAuthHandler?,
+        host: String?,
+        realm: String?
+    ) {
+        val interceptor = navigator.basicAuthInterceptor
+        if (interceptor == null || handler == null || host == null) {
+            super.onReceivedHttpAuthRequest(view, handler, host, realm)
+            return
+        }
+        val challenge = com.multiplatform.webview.response.BasicAuthChallenge(
+            host = host,
+            realm = realm,
+            isProxy = false,
+            previousFailureCount = try { handler.useHttpAuthUsernamePassword(); 0 } catch (_: Throwable) { 0 }
+        )
+        val wrapped = object : com.multiplatform.webview.response.BasicAuthHandler {
+            private var used = false
+            override fun proceed(username: String, password: String) {
+                if (used) return; used = true
+                handler.proceed(username, password)
+            }
+            override fun cancel() {
+                if (used) return; used = true
+                handler.cancel()
+            }
+        }
+        val stop = try { interceptor.onHttpAuthRequest(challenge, wrapped, navigator) } catch (_: Throwable) { false }
+        if (!stop) {
+            super.onReceivedHttpAuthRequest(view, handler, host, realm)
+        }
+    }
+
     var assetLoader: WebViewAssetLoader? = null
 
     override fun onPageStarted(
@@ -368,8 +402,13 @@ open class AccompanistWebViewClient : WebViewClient() {
             "onReceivedHttpError: $errorResponse"
         }
 
+
         if (navigator.errorResponseInterceptor?.onInterceptErrorResponse(
-                ErrorResponse(errorCode = errorResponse?.statusCode?.toLong()),
+                ErrorResponse(
+                    url = request?.url.toString(),
+                    errorCode = errorResponse?.statusCode?.toLong(),
+                    description = errorResponse?.reasonPhrase
+                ),
                 navigator
             ) ?: false
         ) {
@@ -403,7 +442,10 @@ open class AccompanistWebViewClient : WebViewClient() {
             )
         }
         if (navigator.errorResponseInterceptor?.onInterceptErrorResponse(
-                ErrorResponse(errorCode = error?.errorCode?.toLong(), description = error?.description.toString()),
+                ErrorResponse(
+                    url = request?.url.toString(),
+                    errorCode = error?.errorCode?.toLong(),
+                    description = error?.description.toString()),
                 navigator
             ) ?: false
         ) {
